@@ -16,6 +16,7 @@ namespace Snake
         private Circle food = new Circle();
         int maxXPos;
         int maxYPos;
+        Random random;
 
         public Form1()
         {
@@ -30,6 +31,8 @@ namespace Snake
             maxXPos = pbCanvas.Size.Width / Settings.Width;
             maxYPos = pbCanvas.Size.Height / Settings.Height;
 
+            random = new Random();
+
             StartGame();
         }
 
@@ -41,9 +44,8 @@ namespace Snake
 
             Snake.Clear();
             Circle head = new Circle();
-            Random random = new Random();
-            head.X = 10;
-            head.Y = 5;
+            head.X = random.Next(0,maxXPos);
+            head.Y = random.Next(0, maxYPos);
             Snake.Add(head);
 
             lblScore.Text = Settings.Score.ToString();
@@ -53,8 +55,6 @@ namespace Snake
 
         private void GenerateFood()
         {
-            Random random = new Random();
-
             food = new Circle();
             food.X = random.Next(0, maxXPos);
             food.Y = random.Next(0, maxYPos);
@@ -62,7 +62,12 @@ namespace Snake
 
         private void UpdateScreen(object sender, EventArgs e)
         {
-            if (!Settings.GameOver)
+            if (Settings.GameOver)
+            {
+                if (Input.KeyPressed(Keys.Enter))
+                    StartGame();
+            }
+            else
             {
                 if(Input.KeyPressed(Keys.Left) && Settings.direction != Direction.Right)
                 {
@@ -119,7 +124,48 @@ namespace Snake
 
         private void MovePlayer()
         {
+            for(int i = Snake.Count - 1; i>= 0; i--)
+            {
+                if(i == 0)
+                {
+                    switch (Settings.direction)
+                    {
+                        case Direction.Up:
+                            Snake[i].Y--;
+                            break;
+                        case Direction.Down:
+                            Snake[i].Y++;
+                            break;
+                        case Direction.Left:
+                            Snake[i].X--;
+                            break;
+                        case Direction.Right:
+                            Snake[i].X++;
+                            break;
+                    }
 
+
+                    if (Snake[i].X > maxXPos || Snake[i].X < 0 || Snake[i].Y > maxYPos || Snake[i].Y < 0)
+                        Die();
+
+                    for(int j = 1; j < Snake.Count; j++)
+                    {
+                        if(Snake[0].X == Snake[j].X && Snake[0].Y == Snake[j].Y)
+                        {
+                            Die();
+                            break;
+                        }
+                    }
+
+                    if (Snake[0].X == food.X && Snake[0].Y == food.Y)
+                        Eat();
+                }
+                else
+                {
+                    Snake[i].X = Snake[i - 1].X;
+                    Snake[i].Y = Snake[i - 1].Y;
+                }
+            }
         }
 
         private void Die()
@@ -138,6 +184,9 @@ namespace Snake
             Settings.Score += Settings.Points;
             lblScore.Text = Settings.Score.ToString();
 
+            Settings.Speed++;
+            gameTimer.Interval = 1000 / Settings.Speed;
+
             GenerateFood();
         }
 
@@ -149,16 +198,6 @@ namespace Snake
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             Input.ChangeState(e.KeyCode, true);
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void pbCanvas_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }
